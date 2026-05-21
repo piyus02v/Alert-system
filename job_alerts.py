@@ -22,7 +22,7 @@ KEYWORDS = [
 # ── Block these — senior / irrelevant roles ───────────────────────────
 BLOCK_TITLE = [
     # seniority
-    "senior", "sr.", "sr ", "staff engineer", "principal", "lead", "manager",
+    "senior", "sr.", "sr ", "staff", "principal", "lead", "manager",
     "director", "vp ", "head of", "architect", "distinguished", "fellow",
     # roman / numeric levels (Engineer II, SDE-2, SWE 3 etc)
     " ii", " iii", " iv", "-2", "-3", "-4", " 2", " 3", " 4",
@@ -141,6 +141,9 @@ def matches_keyword(text):
 def is_junior_role(title, description=""):
     t = title.lower()
     d = description.lower()
+    # whitelist — always allow regardless of block words
+    if "member of technical staff" in t:
+        return True
     if any(b in t for b in BLOCK_TITLE):
         return False
     if any(y in d for y in BLOCK_YOE):
