@@ -83,19 +83,19 @@ GREENHOUSE_SLUGS = {
     "Groww":              "groww",
 }
 
-# ── All target companies (Lever slugs) ───────────────────────────────
+# ── All target companies (Lever slugs) ────────────────────────────────
 LEVER_SLUGS = {
-    "CRED":           "cred",
-    "Razorpay":       "razorpay",
-    "BrowserStack":   "browserstack",
-    "Hasura":         "hasura",
-    "Meesho":         "meesho",
-    "Juspay":         "juspay",
-    "Zepto":          "zepto",
-    "PhonePe":        "phonepe",
-    "Smallcase":      "smallcase",
-    "Sarvam AI":      "sarvam-ai",
-    "Krutrim":        "krutrim",
+    "CRED":         "cred",
+    "Razorpay":     "razorpay",
+    "BrowserStack": "browserstack",
+    "Hasura":       "hasura",
+    "Meesho":       "meesho",
+    "Juspay":       "juspay",
+    "Zepto":        "zepto",
+    "PhonePe":      "phonepe",
+    "Smallcase":    "smallcase",
+    "Sarvam AI":    "sarvam-ai",
+    "Krutrim":      "krutrim",
 }
 
 # ── Seen jobs tracker ─────────────────────────────────────────────────
@@ -116,12 +116,12 @@ def job_id(title, company, url=""):
 # ── Pushover notification ─────────────────────────────────────────────
 def notify(title, message, url=""):
     payload = {
-        "token":     PUSHOVER_TOKEN,
-        "user":      PUSHOVER_USER,
-        "title":     f"🚀 {title}",
-        "message":   message,
-        "sound":     "cashregister",
-        "priority":  0,
+        "token":    PUSHOVER_TOKEN,
+        "user":     PUSHOVER_USER,
+        "title":    f"🚀 {title}",
+        "message":  message,
+        "sound":    "cashregister",
+        "priority": 0,
     }
     if url:
         payload["url"] = url
@@ -141,30 +141,26 @@ def matches_keyword(text):
 def is_junior_role(title, description=""):
     t = title.lower()
     d = description.lower()
-    # block on title
     if any(b in t for b in BLOCK_TITLE):
         return False
-    # block on yoe in description
     if any(y in d for y in BLOCK_YOE):
         return False
     return True
 
 def is_india_or_remote(location_text):
-    """Returns True if location is India, remote, or unspecified."""
     t = location_text.lower()
-    # if clearly a blocked non-India location
     if any(b in t for b in BLOCK_LOCATION):
         return False
-    # if India/remote keyword found, good
     if any(k in t for k in INDIA_KEYWORDS):
         return True
-    # if location is empty/unspecified, allow (filter later by context)
     if not t.strip():
         return True
     return False
 
 def is_relevant(title, location="", description=""):
-    return matches_keyword(title) and is_junior_role(title, description) and is_india_or_remote(location)
+    return (matches_keyword(title)
+            and is_junior_role(title, description)
+            and is_india_or_remote(location))
 
 # ── Indeed RSS ────────────────────────────────────────────────────────
 def scrape_indeed():
@@ -239,8 +235,7 @@ def scrape_remotive():
             company = job.get("company_name", "")
             url     = job.get("url", "")
             geo     = job.get("candidate_required_location", "")
-            # only worldwide / India / Asia remote
-            if any(x in geo.lower() for x in ["worldwide","anywhere","india","asia",""]):
+            if any(x in geo.lower() for x in ["worldwide", "anywhere", "india", "asia", ""]):
                 if is_relevant(title, geo, job.get("description", "")):
                     jobs.append({
                         "title":   title,
@@ -267,7 +262,8 @@ def scrape_greenhouse():
                 title    = job.get("title", "")
                 location = job.get("location", {}).get("name", "")
                 url      = job.get("absolute_url", "")
-                if is_relevant(title, location, job.get("description", "") + job.get("content", "") + job.get("text","")):
+                desc     = job.get("description", "") + job.get("content", "") + job.get("text", "")
+                if is_relevant(title, location, desc):
                     jobs.append({
                         "title":   title,
                         "company": company,
@@ -293,7 +289,8 @@ def scrape_lever():
                 title    = job.get("text", "")
                 location = job.get("categories", {}).get("location", "")
                 url      = job.get("hostedUrl", "")
-                if is_relevant(title, location, job.get("description", "") + job.get("content", "") + job.get("text","")):
+                desc     = job.get("description", "") + job.get("content", "") + job.get("text", "")
+                if is_relevant(title, location, desc):
                     jobs.append({
                         "title":   title,
                         "company": company,
@@ -309,7 +306,7 @@ def scrape_lever():
 def check_jobs():
     now = datetime.now().strftime('%d %b %H:%M')
     print(f"\n[{now}] Scanning for new jobs...")
-    seen     = load_seen()
+    seen      = load_seen()
     new_count = 0
 
     all_jobs  = []
@@ -327,7 +324,6 @@ def check_jobs():
             continue
         seen.add(jid)
         new_count += 1
-
         msg = f"{job['company']} [{job['source']}]\n{job.get('summary','')[:120]}"
         ok  = notify(job["title"], msg, job["url"])
         print(f"  {'✓' if ok else '✗'} {job['title']} @ {job['company']}")
@@ -345,7 +341,7 @@ if __name__ == "__main__":
     print("  Checks:  Every 60 minutes")
     print("=" * 55)
 
-    check_jobs()  # run immediately
+    check_jobs()
 
     schedule.every(60).minutes.do(check_jobs)
     print("\nRunning... Press Ctrl+C to stop\n")
